@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if supplier %}Edit{% else %}Add{% endif %} Supplier | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'inventory:supplier_list' %}" class="text-decoration-none">Suppliers</a></div>
+<div class="breadcrumb-item">{% if supplier %}Edit{% else %}Add{% endif %} Supplier</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header border-bottom-0 pb-0">
+                <h1 class="h4 fw-bold">{% if supplier %}Edit Supplier{% else %}Add New Supplier{% endif %}</h1>
+                <p class="text-muted small">Manage your raw material providers and their contact details.</p>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="row">
+                        {% for field in form %}
+                        <div class="col-md-{% if field.name == 'address' or field.name == 'notes' %}12{% else %}6{% endif %}">
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'inventory:supplier_list' %}" class="btn btn-outline">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Supplier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

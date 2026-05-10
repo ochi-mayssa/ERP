@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Delete User - Factory ERP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="mb-0">Confirm Delete User</h5>
+            </div>
+            <div class="card-body">
+                <p>Are you sure you want to delete the user <strong>{{ user_to_delete.username }}</strong>?</p>
+                <p class="text-danger small">This action is permanent and cannot be undone.</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'inventory:user_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-danger">Permanently Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

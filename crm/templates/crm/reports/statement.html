@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Customer Statement | {{ customer.company_name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'crm:customer_list' %}" class="text-decoration-none">Customers</a></div>
+<div class="breadcrumb-item"><a href="{% url 'crm:customer_detail' customer.pk %}" class="text-decoration-none">{{ customer.company_name }}</a></div>
+<div class="breadcrumb-item">Statement</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4 d-flex justify-content-between align-items-end">
+    <div>
+        <h1 class="h3 fw-bold">Customer Statement</h1>
+        <p class="text-muted">Detailed transaction history and outstanding balance.</p>
+    </div>
+    <div class="pb-1">
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Statement
+        </button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-building text-primary"></i> Customer Information</h5>
+            </div>
+            <div class="card-body">
+                <h5 class="fw-bold mb-2">{{ customer.company_name }}</h5>
+                <div class="d-flex flex-column gap-1 text-muted">
+                    <span><i class="fas fa-user me-2"></i> {{ customer.contact_person }}</span>
+                    <span><i class="fas fa-envelope me-2"></i> {{ customer.email }}</span>
+                    <span><i class="fas fa-phone me-2"></i> {{ customer.phone }}</span>
+                    {% if customer.address %}
+                    <span><i class="fas fa-location-dot me-2"></i> {{ customer.address }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100 bg-primary text-white border-0">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center text-center py-4">
+                <h6 class="text-white-50 text-uppercase small fw-bold mb-3">Total Outstanding Balance</h6>
+                <div class="display-5 fw-bold mb-0">${{ total_balance }}</div>
+                {% if total_balance > 0 %}
+                <div class="badge bg-white text-primary mt-3">Payment Due</div>
+                {% else %}
+                <div class="badge bg-white text-success mt-3">Account Clear</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm overflow-hidden">
+    <div class="card-header">
+        <h5 class="card-title"><i class="fas fa-list-check text-secondary"></i> Transaction History</h5>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Reference</th>
+                    <th class="text-end">Amount</th>
+                    <th class="text-end">Running Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in statement_items %}
+                <tr>
+                    <td>{{ item.date|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="badge {% if item.type == 'Invoice' %}badge-blue{% else %}badge-green{% endif %}">
+                            {{ item.type }}
+                        </span>
+                    </td>
+                    <td class="font-monospace text-muted">{{ item.ref }}</td>
+                    <td class="text-end fw-bold {% if item.type == 'Payment' %}text-success{% else %}text-neutral-800{% endif %}">
+                        {% if item.type == 'Payment' %}-{% endif %}${{ item.amount }}
+                    </td>
+                    <td class="text-end fw-bold text-primary">${{ item.running_balance }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">No transactions found for this customer.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

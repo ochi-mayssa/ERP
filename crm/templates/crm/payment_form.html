@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Record Payment | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'crm:invoice_list' %}" class="text-decoration-none">Invoices</a></div>
+<div class="breadcrumb-item">Record Payment</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header border-bottom-0 pb-0">
+                <h1 class="h4 fw-bold">Record Payment</h1>
+                <p class="text-muted small">Log incoming payments and update invoice status.</p>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'crm:invoice_list' %}" class="btn btn-outline">Cancel</a>
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fas fa-money-bill-wave"></i> Record Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const invoiceId = urlParams.get('invoice');
+        if (invoiceId) {
+            const invoiceSelect = document.querySelector('select[name="invoice"]');
+            if (invoiceSelect) invoiceSelect.value = invoiceId;
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

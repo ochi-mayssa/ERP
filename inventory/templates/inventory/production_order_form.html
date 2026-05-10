@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}New{% endif %} Production Order | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'inventory:production_order_list' %}" class="text-decoration-none">Production Orders</a></div>
+<div class="breadcrumb-item">{% if form.instance.pk %}Edit{% else %}New{% endif %} Order</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+    <h1 class="h3 fw-bold">{% if form.instance.pk %}Edit Production Order{% else %}New Production Order{% endif %}</h1>
+    <p class="text-muted">Plan and schedule factory production. BOM requirements are calculated automatically.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100 mb-0">
+            <div class="card-header border-bottom-0">
+                <h5 class="card-title"><i class="fas fa-clipboard-list text-primary"></i> Order Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="production-order-form" novalidate>
+                    {% csrf_token %}
+                    <div class="row">
+                        {% for field in form %}
+                        <div class="col-md-{% if field.name == 'notes' %}12{% else %}6{% endif %}">
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                                {% endif %}
+                                {% if field.help_text %}
+                                <div class="text-muted small mt-1">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'inventory:production_order_list' %}" class="btn btn-outline">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-industry"></i> Create Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100 mb-0">
+            <div class="card-header border-bottom-0">
+                <h5 class="card-title"><i class="fas fa-magnifying-glass-chart text-secondary"></i> Resource Preview</h5>
+            </div>
+            <div class="card-body">
+                <div
+                    id="production-preview"
+                    hx-get="{% url 'inventory:production_order_preview' %}"
+                    hx-trigger="change from:#id_finished_product, keyup changed delay:300ms from:#id_quantity"
+                    hx-include="#production-order-form"
+                    hx-target="#production-preview"
+                >
+                    {% include "inventory/partials/production_order_preview.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

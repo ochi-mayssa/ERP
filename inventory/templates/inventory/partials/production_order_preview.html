@@ -1,0 +1,45 @@
+<div class="card">
+    <h2>Material Preview</h2>
+
+    {% if preview_error %}
+        <p class="errorlist">{{ preview_error }}</p>
+    {% elif preview_order and requirements %}
+        <p>
+            <strong>{{ preview_order.finished_product.name }}</strong>
+            x {{ preview_order.quantity }}
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Raw Material</th>
+                    <th>Required</th>
+                    <th>Available</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in requirements %}
+                    <tr>
+                        <td>{{ item.raw_material.name }}</td>
+                        <td>{{ item.quantity_required }} {{ item.raw_material.unit }}</td>
+                        <td>{{ item.quantity_available }} {{ item.raw_material.unit }}</td>
+                        <td>
+                            {% if item.enough_stock %}
+                                <span class="badge ok">Enough</span>
+                            {% else %}
+                                <span class="badge low">Short</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if stock_ready %}
+            <p class="muted">All required raw materials are currently available.</p>
+        {% else %}
+            <p class="errorlist">Some raw materials do not have enough stock yet.</p>
+        {% endif %}
+    {% else %}
+        <p class="muted">Choose a finished product and quantity to preview material requirements.</p>
+    {% endif %}
+</div>

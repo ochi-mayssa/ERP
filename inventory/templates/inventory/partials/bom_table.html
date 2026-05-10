@@ -1,0 +1,53 @@
+{% load inventory_extras %}
+{% if selected_product %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-list-ol text-secondary"></i> {{ selected_product.name }}</h5>
+            <div class="badge badge-blue">
+                Unit Cost: ${{ total_cost|stringformat:".2f" }}
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if bom_items %}
+                <div class="table-responsive">
+                    <table class="mb-0">
+                        <thead>
+                            <tr>
+                                <th>Raw Material</th>
+                                <th class="text-end">Qty Needed</th>
+                                <th>Unit</th>
+                                <th class="text-end">Avg. Cost</th>
+                                <th class="text-end">Line Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bom_items %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-neutral-900">{{ item.raw_material.name }}</div>
+                                        <div class="small text-muted">{{ item.raw_material.sku }}</div>
+                                    </td>
+                                    <td class="text-end fw-bold">{{ item.quantity_needed }}</td>
+                                    <td><span class="small text-muted">{{ item.raw_material.unit }}</span></td>
+                                    <td class="text-end text-neutral-600">${{ item.raw_material.average_cost|stringformat:".2f" }}</td>
+                                    <td class="text-end fw-bold text-neutral-900">${{ item.raw_material.average_cost|multiply:item.quantity_needed|stringformat:".2f" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <th colspan="4" class="text-end py-3">Total Material Cost</th>
+                                <th class="text-end h5 mb-0 fw-bold py-3 text-primary">${{ total_cost|stringformat:".2f" }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <div class="py-5 text-center">
+                    <i class="fas fa-triangle-exclamation text-warning fa-2x mb-3"></i>
+                    <p class="text-muted">No components defined for this product yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}

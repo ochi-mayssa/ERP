@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Production Order #{{ order.pk }} | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">Production</div>
+<div class="breadcrumb-item">Order #{{ order.pk }}</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Production Order #{{ order.pk }}</h1>
+        <p class="text-muted small">Target: {{ order.finished_product.name }} ({{ order.quantity }} {{ order.finished_product.unit }})</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if perms.inventory.can_manage_production %}
+            {% if order.status == 'draft' %}
+                <form method="post" action="{% url 'inventory:production_order_cancel' order.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline text-danger border-danger">Cancel Order</button>
+                </form>
+                <form method="post" action="{% url 'inventory:production_order_confirm' order.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" {% if not can_confirm %}disabled{% endif %}>Confirm Order</button>
+                </form>
+            {% elif order.status == 'confirmed' %}
+                <form method="post" action="{% url 'inventory:production_order_cancel' order.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline text-danger border-danger">Cancel Order</button>
+                </form>
+                <form method="post" action="{% url 'inventory:production_order_start' order.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning" {% if not can_confirm %}disabled{% endif %}>Start Production</button>
+                </form>
+            {% elif order.status == 'in_progress' %}
+                <form method="post" action="{% url 'inventory:production_order_complete' order.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Complete Production</button>
+                </form>
+            {% endif %}
+        {% endif %}
+        <a href="{% url 'inventory:production_order_list' %}" class="btn btn-outline">Back to List</a>
+    </div>
+</div>
+
+<!-- Progress Stepper -->
+<div class="card mb-4">
+    <div class="card-body py-4">
+        <div class="stepper">
+            <div class="step {% if order.status != 'cancelled' %}completed{% endif %}">
+                <div class="step-icon"><i class="fas fa-file-lines"></i></div>
+                <div class="step-label">Draft</div>
+            </div>
+            <div class="step-connector {% if order.status in 'confirmed,in_progress,completed' %}completed{% endif %}"></div>
+            <div class="step {% if order.status in 'confirmed,in_progress,completed' %}completed{% endif %}">
+                <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="step-label">Confirmed</div>
+            </div>
+            <div class="step-connector {% if order.status in 'in_progress,completed' %}completed{% endif %}"></div>
+            <div class="step {% if order.status in 'in_progress,completed' %}completed{% endif %}">
+                <div class="step-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                <div class="step-label">In Progress</div>
+            </div>
+            <div class="step-connector {% if order.status == 'completed' %}completed{% endif %}"></div>
+            <div class="step {% if order.status == 'completed' %}completed{% endif %}">
+                <div class="step-icon"><i class="fas fa-flag-checkered"></i></div>
+                <div class="step-label">Completed</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-info-circle text-primary"></i> Order Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="detail-row mb-3">
+                    <span class="text-muted small text-uppercase fw-bold">Finished Product</span>
+                    <div class="fw-bold">{{ order.finished_product.name }}</div>
+                </div>
+                <div class="detail-row mb-3">
+                    <span class="text-muted small text-uppercase fw-bold">Target Quantity</span>
+                    <div class="fw-bold">{{ order.quantity }} {{ order.finished_product.unit }}</div>
+                </div>
+                <div class="detail-row mb-3">
+                    <span class="text-muted small text-uppercase fw-bold">Current Status</span>
+                    <div>
+                        <span class="badge 
+                            {% if order.status == 'completed' %}badge-green
+                            {% elif order.status == 'in_progress' %}badge-amber
+                            {% elif order.status == 'cancelled' %}badge-red
+                            {% elif order.status == 'confirmed' %}badge-blue
+                            {% else %}badge-gray{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <span class="text-muted small text-uppercase fw-bold">Created By</span>
+                    <div class="text-neutral-600">{{ order.created_by.username|default:"System" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-chart-pie text-secondary"></i> Cost Breakdown (Per Unit)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div style="height: 200px;">
+                            <canvas id="costChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <div class="p-3 bg-light rounded d-flex justify-content-between">
+                                <span class="text-muted">Material Cost</span>
+                                <span class="fw-bold">${{ cost_data.material_cost|stringformat:".2f" }}</span>
+                            </div>
+                            <div class="p-3 bg-light rounded d-flex justify-content-between">
+                                <span class="text-muted">Labor Cost</span>
+                                <span class="fw-bold">${{ cost_data.labor_cost|stringformat:".2f" }}</span>
+                            </div>
+                            <div class="p-3 bg-light rounded d-flex justify-content-between">
+                                <span class="text-muted">Overhead ({{ order.finished_product.overhead_percentage }}%)</span>
+                                <span class="fw-bold">${{ cost_data.overhead_cost|stringformat:".2f" }}</span>
+                            </div>
+                            <div class="p-3 border-primary border rounded d-flex justify-content-between bg-white">
+                                <span class="fw-bold text-primary">Total Est. Cost</span>
+                                <span class="fw-bold text-primary h5 mb-0">${{ cost_data.total_cost|stringformat:".2f" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title"><i class="fas fa-microchip text-info"></i> Raw Material Requirements</h5>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Raw Material</th>
+                    <th class="text-end">Required</th>
+                    <th class="text-end">Available</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in requirements %}
+                <tr>
+                    <td class="fw-medium">{{ item.raw_material.name }}</td>
+                    <td class="text-end">{{ item.quantity_required }} {{ item.raw_material.unit }}</td>
+                    <td class="text-end">{{ item.quantity_available }} {{ item.raw_material.unit }}</td>
+                    <td class="text-center">
+                        {% if item.enough_stock %}
+                        <span class="badge badge-green"><i class="fas fa-check-circle me-1"></i> Ready</span>
+                        {% else %}
+                        <span class="badge badge-red"><i class="fas fa-triangle-exclamation me-1"></i> Shortage</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">No BOM items found for this product.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        z-index: 1;
+    }
+    .step-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--neutral-200);
+        color: var(--neutral-500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+    .step.completed .step-icon {
+        background-color: var(--primary);
+        color: white;
+    }
+    .step-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--neutral-500);
+    }
+    .step.completed .step-label {
+        color: var(--neutral-900);
+    }
+    .step-connector {
+        flex-grow: 1;
+        height: 2px;
+        background-color: var(--neutral-200);
+        margin: 0 -10px;
+        margin-top: -20px;
+    }
+    .step-connector.completed {
+        background-color: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('costChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Material', 'Labor', 'Overhead'],
+                datasets: [{
+                    data: [
+                        {{ cost_data.material_cost }},
+                        {{ cost_data.labor_cost }},
+                        {{ cost_data.overhead_cost }}
+                    ],
+                    backgroundColor: ['#2563EB', '#10B981', '#F59E0B'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                cutout: '70%'
+            }
+        });
+    });
+</script>
+{% endblock %}

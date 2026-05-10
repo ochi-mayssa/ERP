@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">Dashboard</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+    <h1 class="h3 fw-bold">Welcome back, {{ request.user.username }}</h1>
+    <p class="text-muted">Here's what's happening in your factory today.</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="dashboard-grid mb-4">
+    <div class="card kpi-card">
+        <div class="kpi-label">Active Production</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value">{{ active_production_count|default:"0" }}</div>
+            <span class="text-muted small">orders</span>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Low Stock Items</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value text-warning">{{ low_stock_count|default:"0" }}</div>
+            <span class="text-muted small">products</span>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Pending Purchases</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value text-primary">{{ pending_purchase_count|default:"0" }}</div>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Monthly Revenue</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value text-success">${{ monthly_revenue|default:"0.00" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Charts Row -->
+    <div class="col-lg-8">
+        <div class="card" style="height: 400px;">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-chart-bar text-primary"></i> Sales Pipeline</h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline dropdown-toggle">Last 30 Days</button>
+                </div>
+            </div>
+            <div class="card-body h-100">
+                <canvas id="pipelineChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-bolt text-warning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="{% url 'inventory:product_create' %}" class="btn btn-outline justify-content-start">
+                        <i class="fas fa-plus-circle text-primary"></i> Add New Product
+                    </a>
+                    <a href="{% url 'inventory:production_order_create' %}" class="btn btn-outline justify-content-start">
+                        <i class="fas fa-industry text-secondary"></i> Start Production
+                    </a>
+                    <a href="{% url 'crm:lead_create' %}" class="btn btn-outline justify-content-start">
+                        <i class="fas fa-user-plus text-info"></i> Create New Lead
+                    </a>
+                    <a href="{% url 'inventory:scan_page' %}" class="btn btn-primary">
+                        <i class="fas fa-qrcode"></i> Scan QR Code
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Low Stock Table -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-triangle-exclamation text-danger"></i> Low Stock Alerts</h5>
+                <a href="{% url 'inventory:product_list' %}?low_stock=1" class="text-primary small text-decoration-none">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Stock</th>
+                            <th>Min</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in low_stock_products %}
+                        <tr>
+                            <td class="fw-medium">{{ product.name }}</td>
+                            <td class="text-danger">{{ product.stock_quantity }} {{ product.unit }}</td>
+                            <td>{{ product.reorder_level }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">No low stock alerts</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-clock-rotate-left text-primary"></i> Recent Production</h5>
+                <a href="{% url 'inventory:production_order_list' %}" class="text-primary small text-decoration-none">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Product</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_production %}
+                        <tr>
+                            <td class="font-monospace">{{ order.id }}</td>
+                            <td>{{ order.finished_product.name }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if order.status == 'completed' %}badge-green
+                                    {% elif order.status == 'in_progress' %}badge-amber
+                                    {% elif order.status == 'cancelled' %}badge-red
+                                    {% else %}badge-blue{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">No recent production</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard-charts.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Pipeline data from context
+        const pipelineData = {
+            leads: {{ pipeline_data.leads|default:0 }},
+            opportunities: {{ pipeline_data.opportunities|default:0 }},
+            quotations: {{ pipeline_data.quotations|default:0 }},
+            orders: {{ pipeline_data.orders|default:0 }}
+        };
+        initDashboardCharts(pipelineData);
+    });
+</script>
+{% endblock %}

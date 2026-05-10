@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}WhatsApp Notifications - Factory ERP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-whatsapp text-success"></i> WhatsApp Notification Settings</h5>
+                <a href="{% url 'notifications:test_whatsapp' %}" class="btn btn-sm btn-outline-success">Send Test Message</a>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="id_phone_number" class="form-label fw-bold">WhatsApp Phone Number</label>
+                        <input type="text" name="phone_number" id="id_phone_number" class="form-control" value="{{ recipient.phone_number }}" placeholder="+14155238886" required>
+                        <div class="form-text small">Include country code starting with +. Example: +1 for USA, +44 for UK.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="id_is_active" {% if recipient.is_active %}checked{% endif %}>
+                            <label class="form-check-label fw-bold" for="id_is_active">Enable WhatsApp Alerts</label>
+                        </div>
+                    </div>
+
+                    <h6 class="border-bottom pb-2 mb-3">Notification Preferences</h6>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="low_stock" id="id_low_stock" {% if recipient.low_stock_alerts %}checked{% endif %}>
+                                <label class="form-check-label" for="id_low_stock">Low Stock Alerts</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="production" id="id_production" {% if recipient.production_updates %}checked{% endif %}>
+                                <label class="form-check-label" for="id_production">Production Order Updates</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="purchase" id="id_purchase" {% if recipient.purchase_approvals %}checked{% endif %}>
+                                <label class="form-check-label" for="id_purchase">Purchase Order Status</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="receipt" id="id_receipt" {% if recipient.goods_received %}checked{% endif %}>
+                                <label class="form-check-label" for="id_receipt">Goods Received Confirmation</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="daily" id="id_daily" {% if recipient.daily_summary %}checked{% endif %}>
+                                <label class="form-check-label" for="id_daily">Daily Stock Summary (8 AM)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Save Preferences</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">Recent Alerts Sent</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Preview</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for msg in recent_messages %}
+                            <tr>
+                                <td class="small">{{ msg.sent_at|date:"M d, H:i" }}</td>
+                                <td><span class="badge bg-info text-white">{{ msg.get_type_display }}</span></td>
+                                <td>
+                                    {% if msg.status == 'sent' %}
+                                        <span class="text-success"><i class="bi bi-check-all"></i> Sent</span>
+                                    {% else %}
+                                        <span class="text-danger"><i class="bi bi-x-circle"></i> Failed</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">{{ msg.content|truncatechars:50 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No recent alerts recorded.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

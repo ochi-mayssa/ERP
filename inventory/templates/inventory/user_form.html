@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if edit_user %}Edit{% else %}Add{% endif %} User | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'inventory:user_list' %}" class="text-decoration-none">Users</a></div>
+<div class="breadcrumb-item">{% if edit_user %}Edit{% else %}Add{% endif %} User</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header border-bottom-0 pb-0">
+                <h1 class="h4 fw-bold">{% if edit_user %}Edit User: {{ edit_user.username }}{% else %}Add New User{% endif %}</h1>
+                <p class="text-muted small">Manage system access and permissions for your team.</p>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        {% if not edit_user %}
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_username">Username</label>
+                                <input type="text" name="username" id="id_username" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_email">Email</label>
+                                <input type="email" name="email" id="id_email" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="id_password">Password</label>
+                                <input type="password" name="password" id="id_password" class="form-control" required>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="id_role">Role / Group</label>
+                                <select name="role" id="id_role" required>
+                                    <option value="">Select a role...</option>
+                                    {% for role in roles %}
+                                        <option value="{{ role.id }}" {% if user_role.id == role.id %}selected{% endif %}>{{ role.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="alert alert-info mt-3 mb-0" style="background-color: var(--neutral-50); border-color: var(--neutral-200); color: var(--neutral-700);">
+                                    <div class="small">
+                                        <strong><i class="fas fa-info-circle me-1"></i> Permissions Guide:</strong>
+                                        <ul class="mb-0 mt-1 ps-3">
+                                            <li><strong>Viewer:</strong> Read-only access to all modules.</li>
+                                            <li><strong>Storekeeper:</strong> Manage stock and transactions.</li>
+                                            <li><strong>Manager:</strong> Manage products, production, and purchases.</li>
+                                            <li><strong>Admin:</strong> Full system access and user management.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if edit_user %}
+                        <div class="col-md-12 mt-3">
+                            <div class="form-group">
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="checkbox" name="is_active" id="id_is_active" {% if edit_user.is_active %}checked{% endif %} style="width: auto;">
+                                    <label class="mb-0" for="id_is_active">User is Active</label>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'inventory:user_list' %}" class="btn btn-outline">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {% if edit_user %}Save Changes{% else %}Create User{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Customer | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'crm:customer_list' %}" class="text-decoration-none">Customers</a></div>
+<div class="breadcrumb-item">{% if object %}Edit{% else %}Add{% endif %} Customer</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header border-bottom-0 pb-0">
+                <h1 class="h4 fw-bold">{% if object %}Edit Customer{% else %}Add New Customer{% endif %}</h1>
+                <p class="text-muted small">Manage company profiles and contact information.</p>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="row">
+                        {% for field in form %}
+                        <div class="col-md-{% if field.name == 'notes' or field.name == 'address' %}12{% else %}6{% endif %}">
+                            <div class="form-group">
+                                {% if field.name == "is_active" %}
+                                <div class="d-flex align-items-center gap-2 mt-4 mb-3">
+                                    {{ field }}
+                                    <label class="mb-0" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                </div>
+                                {% else %}
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% endif %}
+                                
+                                {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                                {% endif %}
+                                {% if field.help_text %}
+                                <div class="text-muted small mt-1">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% if object %}{% url 'crm:customer_detail' object.pk %}{% else %}{% url 'crm:customer_list' %}{% endif %}" class="btn btn-outline">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Customer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

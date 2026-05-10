@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Customers | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item">Customers</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Customers</h1>
+        <p class="text-muted small">Manage your active business partners and credit.</p>
+    </div>
+    <a href="{% url 'crm:customer_create' %}" class="btn btn-primary">
+        <i class="fas fa-building-user"></i> Add New Customer
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div class="search-input-group" style="width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" placeholder="Search customers..." hx-get="{% url 'crm:customer_list' %}" hx-trigger="keyup changed delay:500ms" hx-target="#customer-table-body" hx-indicator="#htmx-indicator">
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Contact Person</th>
+                    <th class="text-end">Credit Limit</th>
+                    <th class="text-end">Credit Used</th>
+                    <th>Since</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="customer-table-body">
+                {% for customer in customers %}
+                <tr>
+                    <td>
+                        <a href="{% url 'crm:customer_detail' customer.pk %}" class="fw-bold text-neutral-900 text-decoration-none hover-link">{{ customer.company_name }}</a>
+                        <div class="small text-muted">{{ customer.email }}</div>
+                    </td>
+                    <td>{{ customer.contact_person }}</td>
+                    <td class="text-end fw-bold">${{ customer.credit_limit }}</td>
+                    <td class="text-end text-danger">${{ customer.credit_used }}</td>
+                    <td class="small text-muted">{{ customer.customer_since|date:"M d, Y" }}</td>
+                    <td>
+                        {% if customer.is_active %}
+                        <span class="badge badge-green">Active</span>
+                        {% else %}
+                        <span class="badge badge-gray">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="dropdown">
+                            <button class="btn btn-icon btn-sm btn-outline">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-content">
+                                <a href="{% url 'crm:customer_edit' customer.pk %}" class="dropdown-item">Edit Profile</a>
+                                <a href="{% url 'crm:report_statement' customer.pk %}" class="dropdown-item">View Statement</a>
+                                <a href="{% url 'crm:salesorder_create' %}?customer={{ customer.pk }}" class="dropdown-item">New Order</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="text-muted">No customers found.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .hover-link:hover {
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ lead.company_name }} | Lead Details{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item"><a href="{% url 'crm:lead_list' %}" class="text-decoration-none">Leads</a></div>
+<div class="breadcrumb-item">{{ lead.company_name }}</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">{{ lead.company_name }}</h1>
+        <p class="text-muted small">Lead since {{ lead.created_at|date:"M d, Y" }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if lead.status == 'qualified' %}
+        <a href="{% url 'crm:lead_convert' lead.pk %}" class="btn btn-secondary">
+            <i class="fas fa-exchange-alt"></i> Convert to Customer
+        </a>
+        {% endif %}
+        <a href="{% url 'crm:lead_edit' lead.pk %}" class="btn btn-outline">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'crm:lead_list' %}" class="btn btn-outline">Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-info-circle text-primary"></i> Contact Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Contact Person</label>
+                            <div class="fw-bold">{{ lead.contact_person }}</div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Email Address</label>
+                            <div><a href="mailto:{{ lead.email }}" class="text-decoration-none">{{ lead.email }}</a></div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Phone Number</label>
+                            <div>{{ lead.phone }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Status</label>
+                            <div>
+                                <span class="badge 
+                                    {% if lead.status == 'new' %}badge-blue
+                                    {% elif lead.status == 'contacted' %}badge-amber
+                                    {% elif lead.status == 'qualified' %}badge-green
+                                    {% else %}badge-red{% endif %}">
+                                    {{ lead.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Source</label>
+                            <div>{{ lead.get_source_display }}</div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Assigned To</label>
+                            <div>{{ lead.assigned_to|default:"Unassigned" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-sticky-note text-warning"></i> Notes</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-neutral-700">{{ lead.notes|linebreaks|default:"No notes available for this lead." }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4 bg-primary text-white border-0">
+            <div class="card-body py-4">
+                <div class="text-center">
+                    <div class="small text-uppercase opacity-75 mb-1">Estimated Value</div>
+                    <div class="display-6 fw-bold">${{ lead.estimated_value }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-lightbulb text-secondary"></i> Opportunities</h5>
+                <a href="{% url 'crm:opportunity_create' %}?lead={{ lead.pk }}" class="btn btn-sm btn-outline">+ New</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for opp in lead.opportunities.all %}
+                    <a href="{% url 'crm:opportunity_edit' opp.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <div class="fw-bold text-neutral-900">{{ opp.product.name }}</div>
+                            <div class="small text-muted">${{ opp.total_value }} | {{ opp.get_stage_display }}</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-neutral-300 small"></i>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted small">No active opportunities.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

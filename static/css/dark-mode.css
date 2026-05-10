@@ -1,0 +1,89 @@
+[data-theme="dark"] {
+    --neutral-100: #0F172A;
+    --neutral-50: #1E293B;
+    --white: #1E293B;
+    --neutral-200: #334155;
+    --neutral-300: #475569;
+    --neutral-400: #94A3B8;
+    --neutral-500: #64748B;
+    --neutral-700: #E2E8F0;
+    --neutral-800: #F1F5F9;
+    --neutral-900: #F8FAFC;
+    
+    color: var(--neutral-300);
+}
+
+[data-theme="dark"] body {
+    background-color: var(--neutral-100);
+    color: var(--neutral-300);
+}
+
+[data-theme="dark"] .card {
+    background-color: var(--white);
+    border-color: var(--neutral-200);
+}
+
+[data-theme="dark"] #topbar {
+    background-color: var(--white);
+    border-color: var(--neutral-200);
+}
+
+[data-theme="dark"] .search-input {
+    background-color: var(--neutral-100);
+    border-color: var(--neutral-200);
+    color: var(--white);
+}
+
+[data-theme="dark"] th {
+    background-color: var(--neutral-50);
+    color: var(--neutral-400);
+    border-color: var(--neutral-200);
+}
+
+[data-theme="dark"] td {
+    border-color: var(--neutral-200);
+    color: var(--neutral-300);
+}
+
+[data-theme="dark"] tr:nth-child(even) {
+    background-color: var(--neutral-50);
+}
+
+[data-theme="dark"] tr:hover {
+    background-color: var(--neutral-200);
+}
+
+[data-theme="dark"] .nav-link:hover, 
+[data-theme="dark"] .nav-link.active {
+    background-color: var(--neutral-200);
+}
+
+[data-theme="dark"] .dropdown-content {
+    background-color: var(--white);
+    border-color: var(--neutral-200);
+}
+
+[data-theme="dark"] .dropdown-item {
+    color: var(--neutral-300);
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+    background-color: var(--neutral-200);
+}
+
+[data-theme="dark"] input, 
+[data-theme="dark"] select, 
+[data-theme="dark"] textarea {
+    background-color: var(--neutral-100);
+    border-color: var(--neutral-200);
+    color: var(--white);
+}
+
+[data-theme="dark"] .btn-outline:hover {
+    background-color: var(--neutral-200);
+    color: var(--white);
+}
+
+[data-theme="dark"] .logo-text {
+    color: var(--white);
+}

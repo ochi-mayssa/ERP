@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CRM Dashboard | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM Dashboard</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+    <h1 class="h3 fw-bold">CRM Overview</h1>
+    <p class="text-muted">Manage your leads, opportunities, and sales pipeline.</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="dashboard-grid mb-4">
+    <div class="card kpi-card">
+        <div class="kpi-label">New Leads (7d)</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value text-primary">{{ new_leads|default:"0" }}</div>
+            <span class="text-muted small">leads</span>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Won Opportunities (Month)</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value text-success">{{ won_opportunities|default:"0" }}</div>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Overdue Invoices</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value text-danger">{{ overdue_invoices|default:"0" }}</div>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Total Pipeline Value</div>
+        <div class="d-flex align-items-baseline gap-2">
+            <div class="kpi-value text-primary">${{ pipeline_value|default:"0.00" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Pipeline Chart -->
+    <div class="col-lg-8">
+        <div class="card" style="height: 400px;">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-chart-line text-primary"></i> Sales Funnel</h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline dropdown-toggle">Current Pipeline</button>
+                </div>
+            </div>
+            <div class="card-body h-100">
+                <canvas id="crmPipelineChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-bolt text-warning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="{% url 'crm:lead_create' %}" class="btn btn-outline justify-content-start">
+                        <i class="fas fa-user-plus text-primary"></i> Add New Lead
+                    </a>
+                    <a href="{% url 'crm:quotation_create' %}" class="btn btn-outline justify-content-start">
+                        <i class="fas fa-file-invoice text-secondary"></i> Create Quotation
+                    </a>
+                    <a href="{% url 'crm:salesorder_create' %}" class="btn btn-outline justify-content-start">
+                        <i class="fas fa-file-signature text-info"></i> New Sales Order
+                    </a>
+                    <a href="{% url 'crm:opportunity_kanban' %}" class="btn btn-primary">
+                        <i class="fas fa-columns"></i> View Kanban Board
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Top Customers Table -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-star text-warning"></i> Top Customers (30 Days)</h5>
+                <a href="{% url 'crm:customer_list' %}" class="text-primary small text-decoration-none">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th class="text-end">Total Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in top_customers %}
+                        <tr>
+                            <td class="fw-medium">
+                                <a href="{% url 'crm:customer_detail' customer.pk %}" class="text-decoration-none text-neutral-800">
+                                    {{ customer.company_name }}
+                                </a>
+                            </td>
+                            <td class="text-end fw-bold">${{ customer.total_sales|default:"0.00" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-4">No sales data yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pipeline Summary -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-list-ul text-primary"></i> Pipeline Summary</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-box bg-blue-light text-primary"><i class="fas fa-user-plus"></i></div>
+                            <span>Leads</span>
+                        </div>
+                        <span class="badge badge-blue">{{ pipeline_data.leads|default:0 }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-box bg-amber-light text-warning"><i class="fas fa-lightbulb"></i></div>
+                            <span>Opportunities</span>
+                        </div>
+                        <span class="badge badge-amber">{{ pipeline_data.opportunities|default:0 }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-box bg-secondary-light text-secondary"><i class="fas fa-file-invoice"></i></div>
+                            <span>Quotations</span>
+                        </div>
+                        <span class="badge badge-green">{{ pipeline_data.quotations|default:0 }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-box bg-indigo-light text-indigo"><i class="fas fa-file-signature"></i></div>
+                            <span>Sales Orders</span>
+                        </div>
+                        <span class="badge badge-blue">{{ pipeline_data.orders|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('crmPipelineChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Leads', 'Opportunities', 'Quotations', 'Sales Orders'],
+                datasets: [{
+                    label: 'Count',
+                    data: [
+                        {{ pipeline_data.leads|default:0 }},
+                        {{ pipeline_data.opportunities|default:0 }},
+                        {{ pipeline_data.quotations|default:0 }},
+                        {{ pipeline_data.orders|default:0 }}
+                    ],
+                    backgroundColor: [
+                        '#2563EB',
+                        '#F59E0B',
+                        '#10B981',
+                        '#6366F1'
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            drawBorder: false,
+                            color: '#E5E7EB'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

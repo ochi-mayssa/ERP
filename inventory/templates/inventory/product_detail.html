@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load static %}
+{% load inventory_extras %}
+
+{% block title %}{{ product.name }} | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">Inventory</div>
+<div class="breadcrumb-item"><a href="{% url 'inventory:product_list' %}" class="text-decoration-none">Products</a></div>
+<div class="breadcrumb-item">{{ product.sku }}</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">{{ product.name }}</h1>
+        <p class="text-muted small">SKU: <span class="font-monospace fw-bold">{{ product.sku }}</span> | Category: {% if product.is_raw_material %}<span class="badge badge-gray">Raw Material</span>{% else %}<span class="badge badge-blue">Finished Good</span>{% endif %}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'inventory:stock_in' %}?product={{ product.pk }}" class="btn btn-outline">
+            <i class="fas fa-plus"></i> Stock In
+        </a>
+        <a href="{% url 'inventory:stock_out' %}?product={{ product.pk }}" class="btn btn-outline text-danger">
+            <i class="fas fa-minus"></i> Stock Out
+        </a>
+        {% if perms.inventory.can_manage_products %}
+            <a href="#" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Product
+            </a>
+        {% endif %}
+        <a href="{% url 'inventory:product_list' %}" class="btn btn-outline">Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <!-- Stock Status Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-warehouse text-primary"></i> Inventory Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-4 mb-4 bg-light rounded">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Current Stock</div>
+                    <div class="h1 fw-bold mb-0 {% if product.stock_quantity <= product.reorder_level %}text-danger{% else %}text-success{% endif %}">
+                        {{ product.stock_quantity }}
+                    </div>
+                    <div class="text-muted">{{ product.unit }}</div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <span class="text-muted small">Reorder Level</span>
+                        <span class="fw-bold">{{ product.reorder_level }} {{ product.unit }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <span class="text-muted small">Stock Value (at Cost)</span>
+                        <span class="fw-bold">${{ product.stock_quantity|multiply:product.average_cost|stringformat:".2f" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-2">
+                        <span class="text-muted small">Status</span>
+                        {% if product.stock_quantity <= product.reorder_level %}
+                        <span class="badge badge-red">Low Stock</span>
+                        {% else %}
+                        <span class="badge badge-green">Healthy</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-qrcode text-secondary"></i> QR Asset Tag</h5>
+                <button onclick="window.print()" class="btn btn-icon btn-sm btn-outline"><i class="fas fa-print"></i></button>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ product.sku }}" alt="QR" class="img-fluid rounded border shadow-sm">
+                </div>
+                <div class="font-monospace fw-bold text-neutral-600">{{ product.sku }}</div>
+                <p class="text-muted small mt-2">Scan to identify this product in the factory floor.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Financial Analysis -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-chart-pie text-primary"></i> Unit Economics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-md-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Unit Cost</div>
+                        <div class="h2 fw-bold text-neutral-900">${{ cost_data.total_cost|stringformat:".2f" }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Selling Price</div>
+                        <div class="h2 fw-bold text-primary">${{ product.selling_price|default:"0.00"|stringformat:".2f" }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Est. Profit</div>
+                        <div class="h2 fw-bold {% if cost_data.margin > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ cost_data.margin|default:"0.00"|stringformat:".2f" }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3 small text-muted text-uppercase">Cost Components</h6>
+                        <div class="d-grid gap-2">
+                            <div class="d-flex justify-content-between p-2 bg-light rounded">
+                                <span>Material Cost</span>
+                                <span class="fw-bold">${{ cost_data.material_cost|stringformat:".2f" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between p-2 bg-light rounded">
+                                <span>Labor Cost</span>
+                                <span class="fw-bold">${{ cost_data.labor_cost|stringformat:".2f" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between p-2 bg-light rounded">
+                                <span>Overhead ({{ product.overhead_percentage }}%)</span>
+                                <span class="fw-bold">${{ cost_data.overhead_cost|stringformat:".2f" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3 small text-muted text-uppercase">Production Params</h6>
+                        <div class="d-grid gap-2">
+                            <div class="d-flex justify-content-between p-2 border-bottom">
+                                <span class="text-muted">Labor Hours/Unit</span>
+                                <span class="fw-bold">{{ product.labor_hours_per_unit }} hr</span>
+                            </div>
+                            <div class="d-flex justify-content-between p-2 border-bottom">
+                                <span class="text-muted">Labor Hourly Rate</span>
+                                <span class="fw-bold">${{ product.labor_hourly_rate }}/hr</span>
+                            </div>
+                            <div class="d-flex justify-content-between p-2 border-bottom">
+                                <span class="text-muted">Avg. Material Cost</span>
+                                <span class="fw-bold">${{ product.average_cost|stringformat:".2f" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not product.is_raw_material %}
+        <!-- BOM -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-list-ol text-secondary"></i> Bill of Materials</h5>
+                <a href="{% url 'inventory:bom_viewer' %}?product={{ product.id }}" class="btn btn-sm btn-outline">Full Viewer</a>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Raw Material</th>
+                            <th class="text-end">Qty Needed</th>
+                            <th class="text-end">Unit Cost</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in product.bom_items.all %}
+                        <tr>
+                            <td class="fw-bold">{{ item.raw_material.name }}</td>
+                            <td class="text-end">{{ item.quantity_needed }} {{ item.raw_material.unit }}</td>
+                            <td class="text-end text-muted small">${{ item.raw_material.average_cost|stringformat:".2f" }}</td>
+                            <td class="text-end fw-bold">${{ item.raw_material.average_cost|multiply:item.quantity_needed|stringformat:".2f" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No components defined for this finished product.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    @media print {
+        #sidebar, #topbar, .btn, .breadcrumb-container, .col-lg-8 {
+            display: none !important;
+        }
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+        .col-lg-4 {
+            width: 100% !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}

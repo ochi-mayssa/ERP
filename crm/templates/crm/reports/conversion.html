@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lead Conversion Report | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'crm:dashboard' %}" class="text-decoration-none">CRM</a></div>
+<div class="breadcrumb-item">Conversion Report</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+    <h1 class="h3 fw-bold">Lead Conversion Analysis</h1>
+    <p class="text-muted">Measure the effectiveness of your sales funnel from initial lead to customer acquisition.</p>
+</div>
+
+<div class="dashboard-grid mb-4">
+    <div class="card kpi-card">
+        <div class="kpi-label">Total Leads</div>
+        <div class="kpi-value">{{ total_leads|default:"0" }}</div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Qualified Leads</div>
+        <div class="kpi-value text-primary">{{ qualified_leads|default:"0" }}</div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Converted Customers</div>
+        <div class="kpi-value text-success">{{ converted_count|default:"0" }}</div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">Avg. Conversion Rate</div>
+        <div class="kpi-value text-primary">{{ conversion_rate|default:"0" }}%</div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm text-center py-5">
+            <div class="card-body">
+                <h5 class="text-muted mb-4">Overall Conversion Funnel</h5>
+                
+                <div class="conversion-chart-container mb-4" style="height: 300px;">
+                    <canvas id="conversionChart"></canvas>
+                </div>
+                
+                <div class="display-4 fw-bold text-primary mb-2">{{ conversion_rate|default:"0" }}%</div>
+                <p class="text-muted">Overall efficiency of turning leads into paying customers.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('conversionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Converted', 'Remaining'],
+                datasets: [{
+                    data: [{{ converted_count|default:0 }}, {{ total_leads|default:1 }} - {{ converted_count|default:0 }}],
+                    backgroundColor: ['#10B981', '#E5E7EB'],
+                    borderWidth: 0,
+                    cutout: '80%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

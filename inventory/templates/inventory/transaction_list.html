@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Stock Transactions | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">Inventory</div>
+<div class="breadcrumb-item">Stock Transactions</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Transaction History</h1>
+        <p class="text-muted small">Comprehensive audit trail of all stock movements.</p>
+    </div>
+    <a href="{% url 'inventory:export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline">
+        <i class="fas fa-file-export"></i> Export CSV
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div class="search-input-group" style="width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" placeholder="Filter by product or note..." hx-get="{% url 'inventory:transaction_history' %}" hx-trigger="keyup changed delay:500ms" hx-target="#transaction-table-body" hx-indicator="#htmx-indicator">
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Type</th>
+                    <th>Product</th>
+                    <th class="text-end">Quantity</th>
+                    <th>User</th>
+                    <th>Reference</th>
+                </tr>
+            </thead>
+            <tbody id="transaction-table-body">
+                {% for transaction in transactions %}
+                <tr>
+                    <td class="small text-muted">{{ transaction.timestamp|date:"M d, Y H:i" }}</td>
+                    <td>
+                        {% if transaction.type == 'receive' %}
+                            <span class="badge badge-green">Receive</span>
+                        {% elif transaction.type == 'issue' %}
+                            <span class="badge badge-amber">Issue</span>
+                        {% elif transaction.type == 'produce' %}
+                            <span class="badge badge-blue">Produce</span>
+                        {% elif transaction.type == 'ship' %}
+                            <span class="badge badge-purple">Ship</span>
+                        {% elif transaction.type == 'adjust' %}
+                            <span class="badge badge-gray">Adjust</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="fw-bold text-neutral-900">{{ transaction.product.name }}</div>
+                        <div class="small text-muted font-monospace">{{ transaction.product.sku }}</div>
+                    </td>
+                    <td class="text-end fw-bold {% if transaction.signed_quantity < 0 %}text-danger{% else %}text-success{% endif %}">
+                        {% if transaction.signed_quantity > 0 %}+{% endif %}{{ transaction.signed_quantity }}
+                    </td>
+                    <td class="small">{{ transaction.user.username|default:"System" }}</td>
+                    <td class="small text-neutral-600 italic">{{ transaction.reference_note|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">No transactions found.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

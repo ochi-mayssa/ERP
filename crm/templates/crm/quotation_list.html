@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Quotations | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item">Quotations</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Quotations</h1>
+        <p class="text-muted small">Manage formal price quotes and proposals for customers.</p>
+    </div>
+    <a href="{% url 'crm:quotation_create' %}" class="btn btn-primary">
+        <i class="fas fa-file-invoice"></i> Create Quotation
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div class="search-input-group" style="width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" placeholder="Search quotes..." hx-get="{% url 'crm:quotation_list' %}" hx-trigger="keyup changed delay:500ms" hx-target="#quotation-table-body" hx-indicator="#htmx-indicator">
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Quote Number</th>
+                    <th>Customer</th>
+                    <th class="text-end">Total Amount</th>
+                    <th>Status</th>
+                    <th>Valid Until</th>
+                    <th>Created</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="quotation-table-body">
+                {% for quote in quotations %}
+                <tr>
+                    <td class="font-monospace fw-bold text-neutral-900">
+                        <a href="{% url 'crm:quotation_detail' quote.pk %}" class="text-decoration-none hover-link">{{ quote.quote_number }}</a>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ quote.customer.company_name }}</div>
+                        <div class="small text-muted">{{ quote.customer.contact_person }}</div>
+                    </td>
+                    <td class="text-end fw-bold text-neutral-900">${{ quote.total_amount }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if quote.status == 'accepted' %}badge-green
+                            {% elif quote.status == 'rejected' %}badge-red
+                            {% elif quote.status == 'expired' %}badge-gray
+                            {% elif quote.status == 'sent' %}badge-blue
+                            {% else %}badge-amber{% endif %}">
+                            {{ quote.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="small {% if quote.is_expired %}text-danger fw-bold{% else %}text-muted{% endif %}">{{ quote.valid_until|date:"M d, Y" }}</td>
+                    <td class="small text-muted">{{ quote.created_at|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'crm:quotation_detail' quote.pk %}" class="btn btn-sm btn-outline">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="text-muted">No quotations found.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .hover-link:hover {
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock %}

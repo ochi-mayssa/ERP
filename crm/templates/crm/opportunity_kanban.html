@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Opportunity Pipeline | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item">Pipeline</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Opportunity Pipeline</h1>
+        <p class="text-muted small">Drag and drop cards to update opportunity stages.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'crm:opportunity_list' %}" class="btn btn-outline">
+            <i class="fas fa-list"></i> List View
+        </a>
+        <a href="{% url 'crm:opportunity_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Opportunity
+        </a>
+    </div>
+</div>
+
+<div class="kanban-board">
+    {% for stage_code, stage_name in stages.items %}
+    <div class="kanban-column" data-stage="{{ stage_code }}">
+        <div class="kanban-column-header">
+            <span>{{ stage_name }}</span>
+            <span class="badge badge-gray">{{ opportunities_by_stage|get_item:stage_code|length }}</span>
+        </div>
+        <div class="kanban-cards-container" id="stage-{{ stage_code }}" style="min-height: 100px;">
+            {% for opp in opportunities_by_stage|get_item:stage_code %}
+            <div class="kanban-card" data-id="{{ opp.pk }}">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small text-muted font-monospace">#OPP-{{ opp.pk }}</span>
+                    <span class="badge {% if opp.probability >= 70 %}badge-green{% elif opp.probability >= 40 %}badge-amber{% else %}badge-red{% endif %}">
+                        {{ opp.probability }}%
+                    </span>
+                </div>
+                <h6 class="fw-bold mb-1">
+                    {% if opp.customer %}
+                        {{ opp.customer.company_name }}
+                    {% else %}
+                        {{ opp.lead.company_name }}
+                    {% endif %}
+                </h6>
+                <div class="small text-neutral-600 mb-3">{{ opp.product.name }}</div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="fw-bold text-primary">${{ opp.total_value }}</div>
+                    <div class="small text-muted"><i class="fas fa-calendar-alt me-1"></i> {{ opp.expected_close_date|date:"M d" }}</div>
+                </div>
+                <div class="mt-3 d-flex justify-content-end">
+                    <a href="{% url 'crm:opportunity_edit' opp.pk %}" class="btn btn-icon btn-sm btn-outline"><i class="fas fa-pencil"></i></a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .kanban-cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: var(--primary) !important;
+    }
+    .sortable-drag {
+        transform: rotate(2deg);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const columns = document.querySelectorAll('.kanban-cards-container');
+        
+        columns.forEach(column => {
+            new Sortable(column, {
+                group: 'pipeline',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function (evt) {
+                    const opportunityId = evt.item.dataset.id;
+                    const newStage = evt.to.parentElement.dataset.stage;
+                    
+                    if (evt.from !== evt.to) {
+                        // Send HTMX or fetch request to update status
+                        updateOpportunityStage(opportunityId, newStage);
+                    }
+                }
+            });
+        });
+    });
+
+    async function updateOpportunityStage(id, stage) {
+        try {
+            const response = await fetch(`/crm/opportunities/${id}/update-stage/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'stage': stage
+                })
+            });
+            
+            if (response.ok) {
+                showToast('Stage updated successfully', 'success');
+            } else {
+                showToast('Failed to update stage', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('An error occurred', 'error');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}User Management | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">Settings</div>
+<div class="breadcrumb-item">User Management</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">User Management</h1>
+        <p class="text-muted small">Control system access, roles, and permissions.</p>
+    </div>
+    <a href="{% url 'inventory:user_create' %}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> Add New User
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email Address</th>
+                    <th>System Roles</th>
+                    <th>Status</th>
+                    <th>Admin Access</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar bg-light text-primary fw-bold">{{ user.username|first|upper }}</div>
+                            <div class="fw-bold text-neutral-900">{{ user.username }}</div>
+                        </div>
+                    </td>
+                    <td class="text-neutral-600 small">{{ user.email }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for group in user.groups.all %}
+                                <span class="badge badge-blue">{{ group.name }}</span>
+                            {% empty %}
+                                <span class="badge badge-gray">No Role</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge badge-red">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_staff %}
+                            <span class="text-success small fw-bold"><i class="fas fa-shield-halved me-1"></i> Authorized</span>
+                        {% else %}
+                            <span class="text-muted small">Standard User</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="dropdown">
+                            <button class="btn btn-icon btn-sm btn-outline">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-content">
+                                <a href="{% url 'inventory:user_edit' user.pk %}" class="dropdown-item">Edit Roles</a>
+                                <form method="post" action="{% url 'inventory:user_toggle_status' user.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">
+                                        {% if user.is_active %}Deactivate Account{% else %}Activate Account{% endif %}
+                                    </button>
+                                </form>
+                                <a href="{% url 'inventory:user_delete' user.pk %}" class="dropdown-item text-danger">Delete User</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Opportunity | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'crm:opportunity_list' %}" class="text-decoration-none">Opportunities</a></div>
+<div class="breadcrumb-item">{% if object %}Edit{% else %}Add{% endif %} Opportunity</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header border-bottom-0 pb-0">
+                <h1 class="h4 fw-bold">{% if object %}Edit Opportunity{% else %}Add New Opportunity{% endif %}</h1>
+                <p class="text-muted small">Track potential deals and sales progress.</p>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="row">
+                        {% for field in form %}
+                        <div class="col-md-{% if field.name == 'notes' or field.name == 'description' %}12{% else %}6{% endif %}">
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                                {% endif %}
+                                {% if field.help_text %}
+                                <div class="text-muted small mt-1">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'crm:opportunity_list' %}" class="btn btn-outline">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Opportunity
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const leadId = urlParams.get('lead');
+        const customerId = urlParams.get('customer');
+        
+        if (leadId) {
+            const leadSelect = document.querySelector('select[name="lead"]');
+            if (leadSelect) leadSelect.value = leadId;
+        }
+        if (customerId) {
+            const customerSelect = document.querySelector('select[name="customer"]');
+            if (customerSelect) customerSelect.value = customerId;
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

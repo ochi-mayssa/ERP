@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Opportunities | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item">Opportunities</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Opportunities</h1>
+        <p class="text-muted small">Track and manage potential sales deals through the pipeline.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'crm:opportunity_kanban' %}" class="btn btn-outline">
+            <i class="fas fa-columns"></i> Kanban View
+        </a>
+        <a href="{% url 'crm:opportunity_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Opportunity
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div class="search-input-group" style="width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" placeholder="Search opportunities..." hx-get="{% url 'crm:opportunity_list' %}" hx-trigger="keyup changed delay:500ms" hx-target="#opportunity-table-body" hx-indicator="#htmx-indicator">
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Target Account</th>
+                    <th>Product</th>
+                    <th class="text-end">Value</th>
+                    <th>Stage</th>
+                    <th>Prob.</th>
+                    <th>Expected Close</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="opportunity-table-body">
+                {% for opp in opportunities %}
+                <tr>
+                    <td>
+                        {% if opp.customer %}
+                            <a href="{% url 'crm:customer_detail' opp.customer.pk %}" class="fw-bold text-neutral-900 text-decoration-none hover-link">{{ opp.customer.company_name }}</a>
+                            <div class="small text-success">Customer</div>
+                        {% elif opp.lead %}
+                            <a href="{% url 'crm:lead_detail' opp.lead.pk %}" class="fw-bold text-neutral-900 text-decoration-none hover-link">{{ opp.lead.company_name }}</a>
+                            <div class="small text-info">Lead</div>
+                        {% else %}
+                            <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="fw-bold text-neutral-700">{{ opp.product.name }}</div>
+                        <div class="small text-muted">{{ opp.quantity }} units</div>
+                    </td>
+                    <td class="text-end fw-bold text-neutral-900">${{ opp.total_value }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if opp.stage == 'won' %}badge-green
+                            {% elif opp.stage == 'lost' %}badge-red
+                            {% elif opp.stage == 'proposal_sent' %}badge-blue
+                            {% else %}badge-amber{% endif %}">
+                            {{ opp.get_stage_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress" style="width: 50px; height: 6px;">
+                                <div class="progress-bar {% if opp.probability >= 70 %}bg-success{% elif opp.probability >= 40 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ opp.probability }}%"></div>
+                            </div>
+                            <span class="small fw-bold">{{ opp.probability }}%</span>
+                        </div>
+                    </td>
+                    <td class="small text-muted">{{ opp.expected_close_date|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'crm:opportunity_edit' opp.pk %}" class="btn btn-icon btn-sm btn-outline">
+                            <i class="fas fa-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="text-muted">No opportunities found.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .hover-link:hover {
+        color: var(--primary) !important;
+    }
+    .progress {
+        background-color: var(--neutral-200);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

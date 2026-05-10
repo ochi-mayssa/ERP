@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Production Orders | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">Production</div>
+<div class="breadcrumb-item">Work Orders</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Production Orders</h1>
+        <p class="text-muted small">Monitor manufacturing status and material requirements.</p>
+    </div>
+    {% if perms.inventory.can_manage_production %}
+        <a href="{% url 'inventory:production_order_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Work Order
+        </a>
+    {% endif %}
+</div>
+
+<!-- Mini KPI Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="card bg-white h-100 shadow-sm border-0">
+            <div class="card-body p-3">
+                <div class="text-muted small fw-bold text-uppercase mb-1">Draft</div>
+                <div class="h4 fw-bold mb-0">{{ draft_orders }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card bg-white h-100 shadow-sm border-0 border-start border-primary border-4">
+            <div class="card-body p-3">
+                <div class="text-primary small fw-bold text-uppercase mb-1">Confirmed</div>
+                <div class="h4 fw-bold mb-0">{{ confirmed_orders }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card bg-white h-100 shadow-sm border-0 border-start border-warning border-4">
+            <div class="card-body p-3">
+                <div class="text-warning small fw-bold text-uppercase mb-1">Active</div>
+                <div class="h4 fw-bold mb-0">{{ in_progress_orders }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card bg-white h-100 shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body p-3">
+                <div class="text-success small fw-bold text-uppercase mb-1">Done</div>
+                <div class="h4 fw-bold mb-0">{{ completed_orders }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card {% if shortage_orders > 0 %}bg-red text-white{% else %}bg-white text-neutral-600{% endif %} h-100 shadow-sm border-0">
+            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="small fw-bold text-uppercase mb-1 opacity-75">Material Shortages</div>
+                    <div class="h4 fw-bold mb-0">{{ shortage_orders }} Orders</div>
+                </div>
+                <i class="fas fa-triangle-exclamation fa-2x opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form
+            id="production-order-filter-form"
+            method="get"
+            class="row g-3 align-items-end"
+            hx-get="{% url 'inventory:production_order_list' %}"
+            hx-trigger="change, keyup changed delay:300ms from:#id_q"
+            hx-target="#production-order-results"
+            hx-indicator="#htmx-indicator"
+        >
+            <div class="col-md-5">
+                <label for="id_q" class="form-label small fw-bold text-muted">Search Work Orders</label>
+                <div class="search-input-group">
+                    <i class="fas fa-search"></i>
+                    <input class="search-input" type="text" id="id_q" name="q" value="{{ search }}" placeholder="Product, SKU, or User...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label for="id_status" class="form-label small fw-bold text-muted">Status Filter</label>
+                <select class="form-control" id="id_status" name="status">
+                    <option value="">All statuses</option>
+                    <option value="draft" {% if status_filter == "draft" %}selected{% endif %}>Draft</option>
+                    <option value="confirmed" {% if status_filter == "confirmed" %}selected{% endif %}>Confirmed</option>
+                    <option value="in_progress" {% if status_filter == "in_progress" %}selected{% endif %}>In Progress</option>
+                    <option value="completed" {% if status_filter == "completed" %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if status_filter == "cancelled" %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="form-check d-flex align-items-center gap-2 mb-2">
+                    <input class="form-check-input mt-0" type="checkbox" id="id_shortages" name="shortages" value="1" {% if shortages_only %}checked{% endif %}>
+                    <label class="form-check-label small fw-bold text-neutral-600" for="id_shortages">Show shortages only</label>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div id="production-order-results">
+        {% include "inventory/partials/production_order_table.html" %}
+    </div>
+</div>
+
+<style>
+    .bg-red { background-color: var(--danger); }
+</style>
+{% endblock %}

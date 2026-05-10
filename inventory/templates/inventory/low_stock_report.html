@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Low Stock Report | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'inventory:product_list' %}" class="text-decoration-none">Inventory</a></div>
+<div class="breadcrumb-item">Low Stock Report</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4 d-flex justify-content-between align-items-end">
+    <div>
+        <h1 class="h3 fw-bold">Low Stock Report</h1>
+        <p class="text-muted">Products currently below their safety stock/reorder levels.</p>
+    </div>
+    <div class="pb-1">
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Report
+        </button>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Current Stock</th>
+                    <th>Reorder Level</th>
+                    <th>Unit</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td class="font-monospace">{{ product.sku }}</td>
+                        <td class="fw-medium">
+                            <a href="{% url 'inventory:product_detail' product.pk %}" class="text-decoration-none text-neutral-800">
+                                {{ product.name }}
+                            </a>
+                        </td>
+                        <td class="text-danger fw-bold">{{ product.stock_quantity }}</td>
+                        <td>{{ product.reorder_level }}</td>
+                        <td>{{ product.unit }}</td>
+                        <td>
+                            <span class="badge badge-red">Low Stock</span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <div class="mb-2"><i class="fas fa-check-circle text-success fa-2x"></i></div>
+                            All products are currently at or above their reorder levels.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

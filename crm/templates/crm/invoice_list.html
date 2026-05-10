@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Invoices | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item">Invoices</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Invoices</h1>
+        <p class="text-muted small">Track billing, outstanding balances, and payment collection.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div class="search-input-group" style="width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" placeholder="Search invoices..." hx-get="{% url 'crm:invoice_list' %}" hx-trigger="keyup changed delay:500ms" hx-target="#invoice-table-body" hx-indicator="#htmx-indicator">
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Invoice Number</th>
+                    <th>Customer</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Balance Due</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="invoice-table-body">
+                {% for invoice in invoices %}
+                <tr>
+                    <td class="font-monospace fw-bold text-neutral-900">
+                        <a href="{% url 'crm:invoice_detail' invoice.pk %}" class="text-decoration-none hover-link">{{ invoice.invoice_number }}</a>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ invoice.customer.company_name }}</div>
+                        <div class="small text-muted">{{ invoice.invoice_date|date:"M d, Y" }}</div>
+                    </td>
+                    <td class="text-end fw-bold text-neutral-900">${{ invoice.total_amount }}</td>
+                    <td class="text-end fw-bold {% if invoice.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">${{ invoice.balance_due }}</td>
+                    <td class="small {% if invoice.is_overdue %}text-danger fw-bold{% else %}text-muted{% endif %}">{{ invoice.due_date|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if invoice.status == 'paid' %}badge-green
+                            {% elif invoice.status == 'overdue' %}badge-red
+                            {% elif invoice.status == 'sent' %}badge-blue
+                            {% else %}badge-gray{% endif %}">
+                            {{ invoice.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'crm:invoice_detail' invoice.pk %}" class="btn btn-sm btn-outline">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="text-muted">No invoices found.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .hover-link:hover {
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock %}

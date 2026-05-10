@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}New Purchase Order | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'inventory:purchase_order_list' %}" class="text-decoration-none">Purchase Orders</a></div>
+<div class="breadcrumb-item">New Order</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+    <h1 class="h3 fw-bold">Create New Purchase Order</h1>
+    <p class="text-muted">Procure raw materials from your verified suppliers.</p>
+</div>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row">
+        <!-- Sidebar: Supplier Info -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-truck text-primary"></i> Supplier Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="{{ form.supplier.id_for_label }}">Select Supplier</label>
+                        {{ form.supplier }}
+                        {% if form.supplier.errors %}
+                            <div class="text-danger small mt-1">{{ form.supplier.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main: Line Items -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-list text-secondary"></i> Items to Purchase</h5>
+                    <button type="button" class="btn btn-sm btn-outline" id="add-line">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th style="width: 120px;">Quantity</th>
+                                <th style="width: 150px;">Unit Price</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="formset-body">
+                            {{ formset.management_form }}
+                            {% for item_form in formset %}
+                            <tr class="formset-row">
+                                <td>
+                                    {{ item_form.id }}
+                                    {{ item_form.product }}
+                                    {% if item_form.product.errors %}
+                                        <div class="text-danger small">{{ item_form.product.errors|striptags }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ item_form.quantity }}
+                                    {% if item_form.quantity.errors %}
+                                        <div class="text-danger small">{{ item_form.quantity.errors|striptags }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ item_form.unit_price }}
+                                    {% if item_form.unit_price.errors %}
+                                        <div class="text-danger small">{{ item_form.unit_price.errors|striptags }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-none">{{ item_form.DELETE }}</div>
+                                    <button type="button" class="btn btn-icon btn-outline text-danger delete-row-btn" title="Remove Item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if formset.non_form_errors %}
+                <div class="card-body py-2">
+                    <div class="alert alert-danger mb-0">{{ formset.non_form_errors }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <a href="{% url 'inventory:purchase_order_list' %}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-cart-shopping"></i> Save Purchase Order
+        </button>
+    </div>
+</form>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addBtn = document.getElementById('add-line');
+        const totalForms = document.getElementById('id_purchaseorderitem_set-TOTAL_FORMS') || document.getElementById('id_items-TOTAL_FORMS');
+        const tbody = document.getElementById('formset-body');
+        
+        // Find the correct prefix
+        let prefix = 'items';
+        if (totalForms && totalForms.id.includes('purchaseorderitem_set')) {
+            prefix = 'purchaseorderitem_set';
+        }
+
+        addBtn.addEventListener('click', function() {
+            const currentCount = parseInt(totalForms.value);
+            const rows = document.querySelectorAll('.formset-row');
+            const firstRow = rows[0];
+            const newRow = firstRow.cloneNode(true);
+            
+            // Update names and IDs
+            newRow.querySelectorAll('input, select').forEach(input => {
+                const name = input.getAttribute('name');
+                if (name) {
+                    const newName = name.replace(`-${prefix}-0-`, `-${prefix}-${currentCount}-`).replace('-0-', `-${currentCount}-`);
+                    input.setAttribute('name', newName);
+                    input.setAttribute('id', `id_${newName}`);
+                    input.value = '';
+                    if (input.type === 'checkbox') input.checked = false;
+                }
+            });
+
+            // Remove error messages from cloned row
+            newRow.querySelectorAll('.text-danger').forEach(err => err.remove());
+            
+            tbody.appendChild(newRow);
+            totalForms.value = currentCount + 1;
+            
+            // Re-bind delete event
+            bindDeleteEvent(newRow.querySelector('.delete-row-btn'));
+        });
+
+        function bindDeleteEvent(btn) {
+            btn.addEventListener('click', function() {
+                const row = this.closest('.formset-row');
+                const rows = document.querySelectorAll('.formset-row');
+                
+                if (rows.length > 1) {
+                    const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                    if (deleteCheckbox) {
+                        deleteCheckbox.checked = true;
+                        row.style.display = 'none';
+                    } else {
+                        row.remove();
+                    }
+                } else {
+                    alert('At least one item is required.');
+                }
+            });
+        }
+
+        document.querySelectorAll('.delete-row-btn').forEach(bindDeleteEvent);
+    });
+</script>
+{% endblock %}
+{% endblock %}

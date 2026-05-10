@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Top Customers Analysis | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'crm:dashboard' %}" class="text-decoration-none">CRM</a></div>
+<div class="breadcrumb-item">Top Customers</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4 d-flex justify-content-between align-items-end">
+    <div>
+        <h1 class="h3 fw-bold">Top Customers Analysis</h1>
+        <p class="text-muted">Identify your most valuable and active business partners.</p>
+    </div>
+    <div class="pb-1">
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Report
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100 overflow-hidden">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-crown text-warning"></i> Top 10 by Revenue</h5>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th class="text-end">Total Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in top_revenue %}
+                        <tr>
+                            <td class="fw-medium">
+                                <a href="{% url 'crm:customer_detail' customer.pk %}" class="text-decoration-none text-neutral-800">
+                                    {{ customer.company_name }}
+                                </a>
+                            </td>
+                            <td class="text-end fw-bold text-primary">${{ customer.revenue }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center py-5 text-muted">No revenue data available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100 overflow-hidden">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-fire text-danger"></i> Most Active Customers</h5>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th class="text-center">Total Orders</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in top_margin %}
+                        <tr>
+                            <td class="fw-medium">
+                                <a href="{% url 'crm:customer_detail' customer.pk %}" class="text-decoration-none text-neutral-800">
+                                    {{ customer.company_name }}
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-blue">{{ customer.total_orders }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center py-5 text-muted">No activity data available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-chart-bar text-primary"></i> Revenue Comparison</h5>
+            </div>
+            <div class="card-body" style="height: 350px;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [{% for customer in top_revenue %}'{{ customer.company_name|truncatechars:15 }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: [{% for customer in top_revenue %}{{ customer.revenue|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: '#2563EB',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,40 @@
+<div class="card border-primary">
+    <div class="card-header bg-primary text-white py-2">
+        <h6 class="mb-0">Scan Result: {{ product.name }}</h6>
+    </div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center">
+                {% if product.sku %}
+                    <p class="mb-1"><strong>SKU:</strong> {{ product.sku }}</p>
+                {% endif %}
+                <p class="h3 mb-0">{{ product.stock_quantity }} {{ product.unit }}</p>
+                <small class="text-muted">Current Stock</small>
+            </div>
+            <div class="col-md-8">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <th class="small text-muted">Cost per Unit:</th>
+                        <td class="text-end fw-bold">${{ cost_data.total_cost|stringformat:".2f" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="small text-muted">Selling Price:</th>
+                        <td class="text-end fw-bold">${{ product.selling_price|default:"0.00"|stringformat:".2f" }}</td>
+                    </tr>
+                    {% if cost_data.margin %}
+                    <tr class="border-top">
+                        <th class="small text-muted">Est. Profit:</th>
+                        <td class="text-end fw-bold {% if cost_data.margin > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ cost_data.margin|stringformat:".2f" }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <a href="{% url 'inventory:product_detail' product.pk %}" class="btn btn-sm btn-primary flex-grow-1">View Full Details</a>
+            <button onclick="location.reload()" class="btn btn-sm btn-outline-secondary">Scan Again</button>
+        </div>
+    </div>
+</div>

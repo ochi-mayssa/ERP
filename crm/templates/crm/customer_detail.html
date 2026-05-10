@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ customer.company_name }} | Customer Details{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item"><a href="{% url 'crm:customer_list' %}" class="text-decoration-none">Customers</a></div>
+<div class="breadcrumb-item">{{ customer.company_name }}</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">{{ customer.company_name }}</h1>
+        <p class="text-muted small">Customer since {{ customer.customer_since|date:"M d, Y" }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'crm:report_statement' customer.pk %}" class="btn btn-outline">
+            <i class="fas fa-file-invoice"></i> View Statement
+        </a>
+        <a href="{% url 'crm:customer_edit' customer.pk %}" class="btn btn-outline">
+            <i class="fas fa-edit"></i> Edit Profile
+        </a>
+        <a href="{% url 'crm:customer_list' %}" class="btn btn-outline">Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Info Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-id-card text-primary"></i> Business Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Primary Contact</label>
+                            <div class="fw-bold">{{ customer.contact_person }}</div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Email Address</label>
+                            <div><a href="mailto:{{ customer.email }}" class="text-decoration-none">{{ customer.email }}</a></div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Phone Number</label>
+                            <div>{{ customer.phone }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Account Status</label>
+                            <div>
+                                {% if customer.is_active %}
+                                <span class="badge badge-green">Active Account</span>
+                                {% else %}
+                                <span class="badge badge-gray">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Tax ID / VAT</label>
+                            <div>{{ customer.tax_id|default:"Not Provided" }}</div>
+                        </div>
+                        <div class="detail-group mb-4">
+                            <label class="text-muted small text-uppercase fw-bold">Assigned Manager</label>
+                            <div>{{ customer.assigned_to|default:"Unassigned" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Overview -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-sack-dollar text-success"></i> Credit & Terms</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-md-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Credit Limit</div>
+                        <div class="h3 fw-bold text-neutral-900">${{ customer.credit_limit }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Credit Used</div>
+                        <div class="h3 fw-bold text-danger">${{ customer.credit_used }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Available</div>
+                        <div class="h3 fw-bold text-success">${{ customer.remaining_credit }}</div>
+                    </div>
+                </div>
+                <div class="p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-bold d-block">Payment Terms</span>
+                        <span class="fw-bold">{{ customer.payment_terms }}</span>
+                    </div>
+                    <i class="fas fa-calendar-check text-neutral-400 fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Recent Orders -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-shopping-bag text-purple"></i> Recent Orders</h5>
+                <a href="{% url 'crm:salesorder_create' %}?customer={{ customer.pk }}" class="btn btn-sm btn-outline">+ New</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for order in customer.sales_orders.all|slice:":5" %}
+                    <a href="{% url 'crm:salesorder_detail' order.pk %}" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="font-monospace fw-bold small">{{ order.order_number }}</span>
+                            <span class="badge 
+                                {% if order.status == 'delivered' %}badge-green
+                                {% elif order.status == 'cancelled' %}badge-red
+                                {% else %}badge-blue{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">{{ order.order_date }}</span>
+                            <span class="fw-bold text-neutral-900">${{ order.total_amount }}</span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted small">No orders yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoices -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-file-invoice-dollar text-warning"></i> Invoices</h5>
+                <a href="{% url 'crm:invoice_list' %}?customer={{ customer.pk }}" class="text-primary small text-decoration-none">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for invoice in customer.invoices.all|slice:":5" %}
+                    <a href="{% url 'crm:invoice_detail' invoice.pk %}" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="font-monospace fw-bold small">{{ invoice.invoice_number }}</span>
+                            <span class="badge 
+                                {% if invoice.status == 'paid' %}badge-green
+                                {% elif invoice.status == 'overdue' %}badge-red
+                                {% else %}badge-blue{% endif %}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">Due: {{ invoice.due_date }}</span>
+                            <span class="fw-bold text-danger">${{ invoice.balance_due }}</span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted small">No invoices yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

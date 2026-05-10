@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sales Orders | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item">Sales Orders</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Sales Orders</h1>
+        <p class="text-muted small">Manage customer purchase orders and delivery fulfillment.</p>
+    </div>
+    <a href="{% url 'crm:salesorder_create' %}" class="btn btn-primary">
+        <i class="fas fa-file-signature"></i> Create New Order
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div class="search-input-group" style="width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" placeholder="Search orders..." hx-get="{% url 'crm:salesorder_list' %}" hx-trigger="keyup changed delay:500ms" hx-target="#order-table-body" hx-indicator="#htmx-indicator">
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order Number</th>
+                    <th>Customer</th>
+                    <th>Order Date</th>
+                    <th class="text-end">Total Amount</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="order-table-body">
+                {% for order in sales_orders %}
+                <tr>
+                    <td class="font-monospace fw-bold text-neutral-900">
+                        <a href="{% url 'crm:salesorder_detail' order.pk %}" class="text-decoration-none hover-link">{{ order.order_number }}</a>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ order.customer.company_name }}</div>
+                        <div class="small text-muted">{{ order.customer.contact_person }}</div>
+                    </td>
+                    <td class="small text-muted">{{ order.order_date|date:"M d, Y" }}</td>
+                    <td class="text-end fw-bold text-neutral-900">${{ order.total_amount }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if order.status == 'delivered' %}badge-green
+                            {% elif order.status == 'cancelled' %}badge-red
+                            {% elif order.status == 'shipped' %}badge-purple
+                            {% elif order.status == 'in_production' %}badge-amber
+                            {% elif order.status == 'confirmed' %}badge-blue
+                            {% else %}badge-gray{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if order.payment_status == 'paid' %}badge-green
+                            {% elif order.payment_status == 'partial' %}badge-amber
+                            {% else %}badge-red{% endif %}">
+                            {{ order.get_payment_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'crm:salesorder_detail' order.pk %}" class="btn btn-sm btn-outline">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="text-muted">No sales orders found.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .hover-link:hover {
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock %}

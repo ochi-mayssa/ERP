@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}A/R Aging Report | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item"><a href="{% url 'crm:dashboard' %}" class="text-decoration-none">CRM</a></div>
+<div class="breadcrumb-item">Aging Report</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4 d-flex justify-content-between align-items-end">
+    <div>
+        <h1 class="h3 fw-bold">Accounts Receivable Aging</h1>
+        <p class="text-muted">Track outstanding invoices and collection performance as of {{ today }}.</p>
+    </div>
+    <div class="pb-1">
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Report
+        </button>
+    </div>
+</div>
+
+<!-- Aging Summary Cards -->
+<div class="dashboard-grid mb-4">
+    <div class="card kpi-card">
+        <div class="kpi-label">0-30 Days</div>
+        <div class="kpi-value">${{ summary.30_days|default:"0.00" }}</div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">31-60 Days</div>
+        <div class="kpi-value text-primary">${{ summary.60_days|default:"0.00" }}</div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">61-90 Days</div>
+        <div class="kpi-value text-warning">${{ summary.90_days|default:"0.00" }}</div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-label">>90 Days</div>
+        <div class="kpi-value text-danger">${{ summary.over_90|default:"0.00" }}</div>
+    </div>
+</div>
+
+<div class="card shadow-sm overflow-hidden">
+    <div class="card-header">
+        <h5 class="card-title"><i class="fas fa-clock-rotate-left text-primary"></i> Outstanding Invoices Detail</h5>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Invoice #</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th class="text-end">Balance Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group, invoices in aging_data.items %}
+                    {% if invoices %}
+                    <tr class="bg-light">
+                        <td colspan="5" class="fw-bold py-2 px-3 text-uppercase small text-neutral-500">
+                            {% if group == '30_days' %}0-30 Days
+                            {% elif group == '60_days' %}31-60 Days
+                            {% elif group == '90_days' %}61-90 Days
+                            {% else %}>90 Days{% endif %}
+                        </td>
+                    </tr>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td class="fw-medium">{{ inv.customer.company_name }}</td>
+                        <td class="font-monospace">
+                            <a href="{% url 'crm:invoice_detail' inv.pk %}" class="text-decoration-none">{{ inv.invoice_number }}</a>
+                        </td>
+                        <td>{{ inv.due_date }}</td>
+                        <td>
+                            {% if group == '30_days' %}
+                                <span class="badge badge-blue">Recent</span>
+                            {% elif group == '60_days' %}
+                                <span class="badge badge-amber">Overdue</span>
+                            {% else %}
+                                <span class="badge badge-red">Critical</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">${{ inv.balance_due }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="bg-neutral-50">
+                    <td colspan="4" class="text-end fw-bold py-3">Total Outstanding</td>
+                    <td class="text-end fw-bold py-3 h5 mb-0 text-primary">${{ summary.total }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

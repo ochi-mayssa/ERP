@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Leads | Factory ERP{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-item">CRM</div>
+<div class="breadcrumb-item">Leads</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Leads</h1>
+        <p class="text-muted small">Manage your potential business opportunities.</p>
+    </div>
+    <a href="{% url 'crm:lead_create' %}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> Add New Lead
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div class="search-input-group" style="width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" placeholder="Search leads..." hx-get="{% url 'crm:lead_list' %}" hx-trigger="keyup changed delay:500ms" hx-target="#lead-table-body" hx-indicator="#htmx-indicator">
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Contact Person</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th>Created At</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="lead-table-body">
+                {% for lead in leads %}
+                <tr>
+                    <td>
+                        <a href="{% url 'crm:lead_detail' lead.pk %}" class="fw-bold text-neutral-900 text-decoration-none hover-link">{{ lead.company_name }}</a>
+                        <div class="small text-muted">ID: #LD-{{ lead.pk|stringformat:"04d" }}</div>
+                    </td>
+                    <td>{{ lead.contact_person }}</td>
+                    <td><a href="mailto:{{ lead.email }}" class="text-decoration-none">{{ lead.email }}</a></td>
+                    <td>
+                        <span class="badge 
+                            {% if lead.status == 'new' %}badge-blue
+                            {% elif lead.status == 'contacted' %}badge-amber
+                            {% elif lead.status == 'qualified' %}badge-green
+                            {% else %}badge-red{% endif %}">
+                            {{ lead.get_status_display }}
+                        </span>
+                    </td>
+                    <td><span class="small">{{ lead.get_source_display }}</span></td>
+                    <td class="small text-muted">{{ lead.created_at|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'crm:lead_edit' lead.pk %}" class="btn btn-icon btn-sm btn-outline">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if lead.status == 'qualified' %}
+                            <a href="{% url 'crm:lead_convert' lead.pk %}" class="btn btn-sm btn-secondary" title="Convert to Customer">
+                                <i class="fas fa-exchange-alt"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="text-muted">No leads found.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .hover-link:hover {
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock %}
